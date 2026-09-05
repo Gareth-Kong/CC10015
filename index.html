@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gareth's habit tool</title>
+    <style>
+        :root {
+            --primary: #FF5A5F;
+            --primary-dark: #E0484C;
+            --bg: #F7F9FC;
+            --card-bg: #FFFFFF;
+            --text: #333333;
+            --strava: #FC4C02;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            max-width: 450px;
+            width: 90%;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .btn-strava {
+            background-color: var(--strava);
+            color: white;
+        }
+
+        .btn-strava:hover {
+            background-color: #e34402;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #aaa;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider::before { margin-right: .5em; }
+        .divider::after { margin-left: .5em; }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .route-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .route-container .input-group {
+            flex: 1;
+        }
+
+        .btn-calculate {
+            background-color: var(--primary);
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-calculate:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #result-section {
+            display: none;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #eee;
+            animation: fadeIn 0.5s;
+        }
+
+        .calories-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--strava);
+            margin: 10px 0;
+        }
+
+        .food-display {
+            font-size: 1.2rem;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff9e6;
+            border-radius: 10px;
+            border: 1px solid #ffe082;
+        }
+
+        .food-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover; 
+            border-radius: 50%; 
+            margin: 0 auto 15px auto;
+            display: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>NO MORE NTU SHUTTLE! 🚶‍♂️</h1>
+        <p class="subtitle">Walk the talk, burn more calories, be a better version of myself.</p>
+
+        <button class="btn btn-strava" onclick="simulateStrava()">Connect & Sync Strava (Demo)</button>
+
+        <div class="divider">OR CHOOSE A ROUTE</div>
+
+        <div class="route-container">
+            <div class="input-group">
+                <label for="from-loc">From</label>
+                <select id="from-loc" onchange="autoFillDistance()">
+                    <option value="">Select...</option>
+                    <option value="Hall 8">Hall 8</option>
+                    <option value="North Spine">North Spine</option>
+                    <option value="South Spine">South Spine</option>
+                    <option value="CC0015 Class">CC0015 Class</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="to-loc">To</label>
+                <select id="to-loc" onchange="autoFillDistance()">
+                    <option value="">Select...</option>
+                    <option value="Hall 8">Hall 8</option>
+                    <option value="North Spine">North Spine</option>
+                    <option value="South Spine">South Spine</option>
+                    <option value="CC0015 Class">CC0015 Class</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="distance">Distance Walked (in km)</label>
+            <input type="number" id="distance" placeholder="e.g., 1.5" step="0.01" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="weight">Your Weight (in kg)</label>
+            <input type="number" id="weight" placeholder="e.g., 65" step="1" min="0">
+        </div>
+
+        <button class="btn btn-calculate" onclick="calculateCalories()">Calculate Calories Burnt</button>
+
+        <div id="result-section">
+            <h3>Awesome job! 🎉</h3>
+            <p>You have burned roughly:</p>
+            <div class="calories-display"><span id="kcal-value">0</span> kcal</div>
+            
+            <div class="food-display">
+                <img id="food-image" class="food-image" src="" alt="Food equivalent">
+                <div id="food-text">Loading deliciousness...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array with imageUrls
+        const sgFoods = [
+            { name: "a Kopi O Kosong", calories: 15, imageUrl: "https://png.pngtree.com/thumb_back/fh260/background/20220813/pngtree-traditional-malaysian-kopitiam-coffee-and-breakfast-table-cup-breakfast-photo-image_19491580.jpg" },
+            { name: "a Half-Boiled Egg", calories: 70, imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsPCRGzJmCyP1odh8-4aq1MWUxb7JwhA5Z4ceXi3f4KKpHNgyGMpWH-ebR&s=10" },
+            { name: "a Chwee Kueh (2 pcs)", calories: 150, imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Chwee_kueh_4.jpg/640px-Chwee_kueh_4.jpg" },
+            { name: "a Curry Puff", calories: 250, imageUrl: "https://dailycookingquest.com/img/2019/06/chwee-kueh-5_hua1c2782dfe6c801ed4678b38473c48e8_128839_eafcf926a294f27c14e7ed13a5da5272.jpg" },
+            { name: "a Roti Prata (Plain)", calories: 300, imageUrl: "https://www.awesomecuisine.com/wp-content/uploads/2013/07/Singapore-Roti-Prata.jpg" },
+            { name: "a Milo Dinosaur", calories: 380, imageUrl: "https://www.wandercooks.com/wp-content/uploads/2023/03/malaysian-milo-dinosaur-3-683x1024.jpg" },
+            { name: "a plate of Chicken Rice", calories: 600, imageUrl: "https://rasamalaysia.com/wp-content/uploads/2024/11/chicken-rice-thumb-500x500.jpg" },
+            { name: "a bowl of Laksa", calories: 700, imageUrl: "https://hot-thai-kitchen.com/wp-content/uploads/2018/06/Laksa-sm.jpg" },
+            { name: "a plate of Char Kway Teow", calories: 740, imageUrl: "https://eatbook.sg/wp-content/uploads/2021/12/fried-kuay-teaw-mee.jpghttps://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Char_kway_teow_3.jpg/640px-Char_kway_teow_3.jpg" },
+            { name: "a plate of Nasi Lemak", calories: 800, imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSR6-b_FcgC2TAnjvIMxeJMFuxRHRXigXmX6KG8Uu5D_vTwfpC_1A9xZK3v&s=10" }
+        ];
+
+        // Distance matrix (in kilometers)
+        const campusDistances = {
+            "Hall 8": {
+                "North Spine": 0.638,
+                "South Spine": 1.0,
+                "CC0015 Class": 1.1
+            },
+            "North Spine": {
+                "Hall 8": 0.638,
+                "South Spine": 0.158,
+                "CC0015 Class": 1.1
+            },
+            "South Spine": {
+                "Hall 8": 1.0,
+                "North Spine": 0.158,
+                "CC0015 Class": 0.147
+            },
+            "CC0015 Class": {
+                "Hall 8": 1.1,
+                "North Spine": 1.1,
+                "South Spine": 0.147
+            }
+        };
+
+        // Auto-fill distance based on dropdown selection
+        function autoFillDistance() {
+            const fromLoc = document.getElementById('from-loc').value;
+            const toLoc = document.getElementById('to-loc').value;
+            const distanceInput = document.getElementById('distance');
+
+            if (fromLoc && toLoc) {
+                if (fromLoc === toLoc) {
+                    distanceInput.value = 0;
+                } else {
+                    const dist = campusDistances[fromLoc][toLoc];
+                    if (dist !== undefined) {
+                        distanceInput.value = dist;
+                    }
+                }
+            }
+        }
+
+        // Formula: Calories burned walking ≈ Distance (km) * Weight (kg) * 1.036
+        function calculateCalories() {
+            const distance = parseFloat(document.getElementById('distance').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+
+            if (isNaN(distance) || isNaN(weight) || distance <= 0 || weight <= 0) {
+                alert("Please enter valid positive numbers for both distance and weight! (If you selected the same location, distance is 0)");
+                return;
+            }
+
+            const caloriesBurnt = Math.round(distance * weight * 1.036);
+            displayResults(caloriesBurnt);
+        }
+
+        // Display the results with the correct Image
+        function displayResults(calories) {
+            document.getElementById('kcal-value').innerText = calories;
+            
+            let matchedFood = sgFoods[0]; 
+            
+            for (let i = 0; i < sgFoods.length; i++) {
+                if (calories >= sgFoods[i].calories) {
+                    matchedFood = sgFoods[i];
+                } else {
+                    break; 
+                }
+            }
+
+            // Update DOM for Image instead of Emoji
+            const imgElement = document.getElementById('food-image');
+            imgElement.src = matchedFood.imageUrl;
+            imgElement.alt = matchedFood.name;
+            imgElement.style.display = 'block'; 
+            
+            document.getElementById('food-text').innerHTML = `That's equivalent to burning off <strong>${matchedFood.name}</strong>! (~${matchedFood.calories} kcal)`;
+            
+            // Show result section
+            document.getElementById('result-section').style.display = 'block';
+        }
+
+        // Simulates fetching a recent walk from a Strava API
+        function simulateStrava() {
+            const btn = document.querySelector('.btn-strava');
+            btn.innerText = "Syncing...";
+            
+            document.getElementById('from-loc').value = "";
+            document.getElementById('to-loc').value = "";
+
+            setTimeout(() => {
+                document.getElementById('distance').value = 2.2;
+                if (!document.getElementById('weight').value) {
+                    document.getElementById('weight').value = 70; 
+                }
+                btn.innerText = "Synced! Recent walk loaded.";
+                
+                calculateCalories();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
